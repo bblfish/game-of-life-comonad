@@ -7,6 +7,7 @@ mainClass in (Compile, run) := Some("LifeZipper")
 
 libraryDependencies ++= Seq(
         "org.typelevel" %% "cats-core" % "2.0.0-M1",
+        "org.typelevel" %% "cats-effect" % "2.0.0-M1",
         "org.scalatest" %% "scalatest" % "3.0.5" % "test"
 )
 

@@ -1,10 +1,12 @@
 
 import cats._
+import cats.data.State
 import cats.implicits._
 
 import scala.collection.mutable
 
 /**
+  *  from the article https://eli-jordan.github.io/2018/02/16/life-is-a-comonad/
  * Store is
  *    (S => A, S)
  *
@@ -107,6 +109,7 @@ object Store {
 object LifeStore extends App {
     type Coord = (Int, Int)
     type Grid[A] = Store[Coord, A]
+//    val state = State{case (x,y) => }
 
     def neighbourCoords(x: Int, y: Int): List[Coord] = List(
         (x + 1, y),
@@ -136,7 +139,7 @@ object LifeStore extends App {
         grid.coflatMap(conway)
 
     def render(plane: Grid[Boolean]): String = {
-        val extent = 20
+        val extent = 30
 
         val coords: List[Coord] = (for {
             x <- 0 until extent
@@ -178,7 +181,8 @@ object LifeStore extends App {
         }
     }
 
-    val initialState = (glider at(0, 0)) ++ (beacon at(15, 5)) ++ (blinker at(16, 4))
+    val initialState = (glider at(0, 0)) ++ (beacon at(15, 5)) ++
+      (blinker at(16, 4)) ++ (beacon at(5, 15))
 
     def gameLoop(): Unit = {
         var current = Store[Coord, Boolean](coord => initialState.getOrElse(coord, false))((0, 0))
