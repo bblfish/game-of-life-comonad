@@ -1,4 +1,3 @@
-import Pairing.⋈
 import cats.data.State
 import cats.effect.{ExitCode, IO, IOApp}
 
@@ -13,16 +12,18 @@ object WStoreStateApp extends IOApp {
   import Component._
   
   val listComponent: Component[Store[List[String],?],State[List[String],Unit],Console] = {
-    def render(history: List[String]): UI[State[List[String],Unit],Console] = (send: State[List[String],Unit]=>IO[Unit]) => {
-      Console(
-        s"I've received $history",
-        (input: String) => send(if (input == "") {
-          State.set(List[String]())
-        } else {
-          State.modify[List[String]](input :: _)
-        })
-      )
-    }
+    def render(history: List[String]): UI[State[List[String],Unit],Console] =
+      (send: State[List[String], Unit] => IO[Unit]) => {
+        Console(
+          s"I've received $history",
+          (input: String) => send(
+            if (input == "") {
+              State.set(List[String]())
+            } else {
+              State.modify[List[String]](input :: _)
+            })
+        )
+      }
     Store(render _)(List[String]())
   }
 
