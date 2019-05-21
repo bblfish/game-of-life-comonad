@@ -73,7 +73,7 @@ object Pairing {
   def zap[F[_], G[_], A, B](pairing: F ⋈ G, fab: F[A => B], ga: G[A]): B =
     pairing[A => B, A, B](fab, ga){ case (a, b) => a(b) }
 
-  def identity: Identity ⋈ Identity = new (Identity ⋈ Identity) {
+  implicit def identity: Identity ⋈ Identity = new (Identity ⋈ Identity) {
     def apply[A, B, C](a: Identity[A], b: Identity[B])(f: (A, B) => C): C =
       f(a, b)
   }
@@ -90,22 +90,18 @@ object Pairing {
       Pair(W.coflatten[A](space),movement){case (wa,_) => wa }
 
 
-  def stateStorePair[S]: State[S, ?] ⋈ Store[S, ?] =
-    new (State[S,?] ⋈ Store[S,?]) {
-    override def apply[A, B, C](state: State[S, A], store: Store[S,B])(f: (A, B) => C): C = {
-      val (s, a) = state.run(store.index).value
-      val b = store.lookup(store.index)
-      //should we instead use the new state? like this:
-      //val b = store.lookup(s)
+  /**
+    * defined in §4.1.3 of "Comonads as Spaces"
+    * @tparam S
+    * @return
+    */
+  implicit def storeStatePair[S]: Store[S, ?] ⋈ State[S, ?] =
+    new (Store[S, ?]⋈ State[S, ?]) {
+    override def apply[A, B, C](store: Store[S,A], state: State[S, B])(f: (A, B) => C): C = {
+      val (s, b) = state.run(store.index).value
+      val a: A = store.lookup(s)
       f(a, b)
     }
   }
-//  def stateStore[F[_],G[_],S](
-//    pairing: F ⋈ G
-//  ): StateT[F,S,_] ⋈ RepresentableStore[G,S,_] =
-//    new Pairing[StateT[F,S,_],RepresentableStore[G,S,_]] {
-//
-//    }
-
 
 }

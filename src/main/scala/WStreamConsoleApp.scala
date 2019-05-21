@@ -2,25 +2,19 @@ import Pairing.Pairing
 import cats.Comonad
 import cats.data.NonEmptyList
 import cats.effect.{ExitCode, IO, IOApp}
-import cats.effect.concurrent.Ref
-import cats.syntax._
-import cats.implicits._
 
 /**
-  *  Translation of comonadic version of console app described in §4.2.1 of
+  *  Translation of comonadic version of console app described in §4.1.2 of
   *   "Comonads for UIs".
   *  https://arthurxavierx.github.io/ComonadsForUIs.pdf
   */
-object ComonadConsoleApp extends IOApp {
-
+object WStreamConsoleApp extends IOApp {
+  import Component._
+  
   //hask: type UI action a = (action -> IO()) -> a )
-  type UI[Actions, Interface] = (Actions => IO[Unit]) => Interface
-  type Component[W[_],Act,Interface] = W[UI[Act,Interface]]  //M has to pair with W!
   type NEList[A] = NonEmptyList[A]
 
 
-  def putStrlLn(value: String) = IO(println(value))
-  val readLn = IO(scala.io.StdIn.readLine)
 
   implicit val streamComonad = new Comonad[Stream] {
     override def extract[A](x: Stream[A]): A = x.head
@@ -60,9 +54,9 @@ object ComonadConsoleApp extends IOApp {
     a #:: unfoldStream(nextState)(next)
   }
 
-  case class Console( text: String, action: String => IO[Unit])
 
-  // Component[Stream,List,Interface] = Component[W[_],Act[_],Interface]
+
+  // Component[Stream,NEList,Interface] = Component[W[_],Act[_],Interface]
   val counterComponent: Stream[UI[NEList[Unit],Console]] = {
     def render(state: Int): UI[NEList[Unit], Console] = {
       (send: NEList[Unit] => IO[Unit]) => Console(
@@ -76,28 +70,6 @@ object ComonadConsoleApp extends IOApp {
     }
   }
 
-  def explore[W[_],M[_],Interface](
-    component: W[UI[M[Unit], Interface]])(  //why does this have to be a Unit monad?
-    implicit
-    CoMonad: Comonad[W], Pair: Pairing[W,M]
-  ): IO[Unit] = {
-    type WComp = W[UI[M[Unit], Interface]]
-    def send(ref: Ref[IO,WComp], space: W[UI[M[Unit],Interface]])= (action: M[Unit]) => {
-      val x: WComp = Pairing.move[W,M,UI[M[Unit],Interface], Unit](space)(action)
-      ref.set(x)  //<- intellij has trouble with this but it seems right.
-    }
-    Ref.of[IO, WComp](component).flatMap { ref =>
-      val step: IO[Unit] = for {
-        space <- ref.get
-        f: ((M[Unit] => IO[Unit]) => Interface) = CoMonad.extract(space)
-        Console(text, action) = f(send(ref, space))
-        _ <- putStrlLn(text)
-        input <- readLn
-        last <- action(input)
-      } yield last
-      step.foreverM[Unit]
-    }
-  }
 
   def run(args: List[String]) = explore(counterComponent).map{_=> ExitCode.Success}
 }
