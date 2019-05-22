@@ -1,5 +1,7 @@
+package userInterface
+
 import cats.Comonad
-import cats.data.State
+import cats.data.{State, Store}
 
 /**
   *
@@ -99,7 +101,7 @@ object Pairing {
     new (Store[S, ?]⋈ State[S, ?]) {
     override def apply[A, B, C](store: Store[S,A], state: State[S, B])(f: (A, B) => C): C = {
       val (s, b) = state.run(store.index).value
-      val a: A = store.lookup(s)
+      val a: A = store.peek(s)
       f(a, b)
     }
   }

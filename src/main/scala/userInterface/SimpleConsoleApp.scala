@@ -1,7 +1,6 @@
-import Pairing.Pairing
-import cats.{Comonad, Monad}
+package userInterface
+
 import cats.effect.{ExitCode, IO, IOApp}
-import cats.implicits._
 
 /**
   *  Translation of simple console app using IO monad from example 4.1.1 in
@@ -34,5 +33,5 @@ object SimpleConsoleApp extends IOApp {
       _ <- putStrlLn("total="+num)
     } yield ExitCode.Success
   }
-  
+
 }

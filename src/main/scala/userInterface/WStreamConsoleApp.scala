@@ -1,7 +1,9 @@
-import Pairing.Pairing
+package userInterface
+
 import cats.Comonad
 import cats.data.NonEmptyList
 import cats.effect.{ExitCode, IO, IOApp}
+import userInterface.Pairing.Pairing
 
 /**
   *  Translation of comonadic version of console app described in §4.1.2 of
@@ -10,7 +12,7 @@ import cats.effect.{ExitCode, IO, IOApp}
   */
 object WStreamConsoleApp extends IOApp {
   import Component._
-  
+
   //hask: type UI action a = (action -> IO()) -> a )
   type NEList[A] = NonEmptyList[A]
 

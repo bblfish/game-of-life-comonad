@@ -1,4 +1,5 @@
-import cats.data.State
+package userInterface
+
 import cats.effect.{ExitCode, IO, IOApp}
 
 /**
@@ -10,7 +11,10 @@ import cats.effect.{ExitCode, IO, IOApp}
 object WStoreStateApp extends IOApp {
 
   import Component._
-  
+  import cats.data.{State, Store}
+  import cats.implicits._
+  import Pairing.storeStatePair
+
   val listComponent: Component[Store[List[String],?],State[List[String],Unit],Console] = {
     def render(history: List[String]): UI[State[List[String],Unit],Console] =
       (send: State[List[String], Unit] => IO[Unit]) => {
@@ -24,7 +28,7 @@ object WStoreStateApp extends IOApp {
             })
         )
       }
-    Store(render _)(List[String]())
+    Store(render _, List[String]())
   }
 
   override def run(args: List[String]): IO[ExitCode] =

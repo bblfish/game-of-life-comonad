@@ -1,10 +1,18 @@
-import Pairing.Pairing
+package userInterface
+
 import cats.Comonad
 import cats.effect.IO
+import userInterface.Pairing.Pairing
 
 object Component {
 
-  type UI[Actions, Interface] = (Actions => IO[Unit]) => Interface
+  // in haskell UI base m a = (m() -> base ()) -> a    (p23 of Comonads for UIs)
+  // this (I think) indicates that actions is a type with one constructor and that it is constructed on the Unit.
+  // so should this be translated as
+  // type UI[Act[_],Interface] = (Act[Unit] => IO[Unit]) => Interface
+  // When Act is the State Monad that means that it is really just a function.
+   type UI[Actions, Interface] = (Actions => IO[Unit]) => Interface
+
   type Component[W[_],Act,Interface] = W[UI[Act,Interface]]  //Act has to pair with W!
   def putStrlLn(value: String) = IO(println(value))
   val readLn = IO(scala.io.StdIn.readLine)
@@ -15,7 +23,7 @@ object Component {
   def explore[W[_],M[_],Interface,A](
     component: W[UI[M[A], Interface]]
   )(implicit
-    CoMonad: Comonad[W], Pair: Pairing[W,M]
+    Comonad: Comonad[W], Pair: Pairing[W,M]
   ): IO[Unit] = {
     import cats.effect.concurrent.Ref
     import cats.implicits._
@@ -29,13 +37,13 @@ object Component {
     Ref.of[IO, WComp](component).flatMap { ref =>
       val step: IO[Unit] = for {
         space <- ref.get
-        f: ((M[A] => IO[Unit]) => Interface) = CoMonad.extract(space)
+        f: ((M[A] => IO[Unit]) => Interface) = Comonad.extract(space)
         Console(text, action) = f(send(ref, space))
         _ <- putStrlLn(text)
         input <- readLn
         last <- action(input)
       } yield last
-      
+
       step.foreverM[Unit]
     }
   }
