@@ -16,7 +16,8 @@ object ComponentT {
   // the monads can be simplified. Eg:
   // A List[Unit] is just a number
   // A State[Unit] is just a function (from state to state) ie s => ((),s) is just s => s
-  type UI[Base[_],M[_],A] = (Base[M[Unit]] => Base[Unit]) => A
+  type CallBk[Base[_],M[_]] = (Base[M[Unit]] => Base[Unit])
+  type UI[Base[_],M[_],A] = CallBk[Base,M] => A
   type ComponentT[Base[_],W[_],M[_],A] = W[UI[Base,M,A]]
 
   case class Console( text: String, action: String => IO[Unit])
@@ -30,7 +31,7 @@ object ComponentT {
     import cats.implicits._
 
     type WCompT[W[_],M[_]] = W[UI[IO,M,Console]]
-    def send(ref: Ref[IO,WCompT[W,M]], space: WCompT[W,M]): IO[M[Unit]] => IO[Unit] =
+    def send(ref: Ref[IO,WCompT[W,M]], space: WCompT[W,M]): CallBk[IO,M] =
       (baseAction: IO[M[Unit]]) => for {
         action <- baseAction  // <- this extraction of action is new as compared to Component.explore
       } yield {
