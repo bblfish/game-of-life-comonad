@@ -22,34 +22,37 @@ object FileConsoleApp extends IOApp {
   lazy val pwd: Path = FileSystems.getDefault.getPath(".")
 
   lazy val filesComponent: Store[List[String], UI[IO, State[List[String], ?], Console]] =
-    Store(render _ ,List[String]())
+    Store(render _ ,List[String]("hello1"))
 
   def render(list: List[String]): (IO[State[List[String], Unit]] => IO[Unit]) => Console =
-    (send: IO[State[List[String],Unit]] => IO[Unit]) =>
-     Console(s"Files read: $list\n$pwd>",
-       (tryReadFile _) andThen send
-     )
+    (send: IO[State[List[String],Unit]] => IO[Unit]) => {
+      Console(s"Files read: $list\n$pwd>",
+        (tryReadFile _) andThen send
+      )
+    }
   
 
   def tryReadFile(input: String): IO[State[List[String], Unit]] = {
-    val read = if (input == null || input == "") reset
+    val read: IO[State[List[String], Unit]] = if (input == null || input == "")
+          IO.raiseError(new Error("empty file name"))
         else for {
           content <- inputStream(new File(input)).use { (fin: FileInputStream) =>
             IO.fromTry(Try(new BufferedReader(new InputStreamReader(fin)).readLine()))
           }
           _ <- IO(println(content))
-        } yield State.modify[List[String]](input::_)
+        } yield State.modify[List[String]]({println("in modify");input::_})
 
     read.handleErrorWith(e => IO(println(e)).flatMap(_=>reset))
   }
 
-  val reset: IO[State[List[String], Unit]] = IO.pure(State.set(List[String]()))
+  val reset: IO[State[List[String], Unit]] =
+    IO(println("resetting")).flatMap{_ => IO(State.modify[List[String]](x=>{println(s"input $x"); "hello"::x}))}
 
   def inputStream(f: File): Resource[IO, FileInputStream] =
     Resource.make {
       IO.fromTry(Try(new FileInputStream(f)))
     } { inStream =>
-      IO(inStream.close()).handleErrorWith{e => IO(println(e)).flatMap(_=> IO.unit)} // release
+      IO(inStream.close()).handleErrorWith{e => IO(println(e))} // release
     }
 
   import Pairing.storeStatePair

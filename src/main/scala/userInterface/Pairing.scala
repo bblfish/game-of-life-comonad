@@ -102,6 +102,8 @@ object Pairing {
     override def apply[A, B, C](store: Store[S,A], state: State[S, B])(f: (A, B) => C): C = {
       val (s, b) = state.run(store.index).value
       val a: A = store.peek(s)
+      println(s"$a = store.peek($s)")
+      println(s"f($a,$b)")
       f(a, b)
     }
   }

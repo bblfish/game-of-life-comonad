@@ -2,9 +2,7 @@ package userInterface
 
 import cats.Comonad
 import cats.effect.IO
-import userInterface.Component.{putStrlLn, readLn}
 import userInterface.Pairing.Pairing
-import cats.implicits._
 
 
 /**
@@ -21,8 +19,11 @@ object ComponentT {
   type ComponentT[Base[_],W[_],M[_],A] = W[UI[Base,M,A]]
 
   case class Console( text: String, action: String => IO[Unit])
+  def putStrlLn(value: String) = IO(println(value))
+  val readLn = IO(scala.io.StdIn.readLine)
 
-  def exploreT[W[_],M[Unit]](
+
+  def exploreT[W[_],M[_]](
     componentT: ComponentT[IO,W,M,Console]
   )(implicit
     coM: Comonad[W], Pair: Pairing[W,M]
@@ -35,17 +36,21 @@ object ComponentT {
       (baseAction: IO[M[Unit]]) => for {
         action <- baseAction  // <- this extraction of action is new as compared to Component.explore
       } yield {
-        val x: WCompT[W,M] = Pairing.move[W, M, UI[IO, M, Console], Unit](space)(action)
-        ref.set(x)
+        val wcomp: WCompT[W,M] = Pairing.move[W, M, UI[IO, M, Console], Unit](space)(action)
+        println(s"wcomp=$wcomp")
+        val result = ref.set(wcomp)
+        println("done send")
+        result
       }
     Ref.of[IO, WCompT[W,M]](componentT).flatMap { ref =>
       val step: IO[Unit] = for {
         space <- ref.get
+        nouse = println(s"space=$space")
         f: ((IO[M[Unit]] => IO[Unit]) => Console) = coM.extract(space)
-        Console(text, action) = f(send(ref, space))
+        Console(text, act) = f(send(ref, space))
         _ <- putStrlLn(text)
         input <- readLn
-        last <- action(input)
+        last <- act(input)
       } yield last
 
       step.foreverM[Unit]
