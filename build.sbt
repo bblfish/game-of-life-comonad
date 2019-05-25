@@ -12,3 +12,9 @@ libraryDependencies ++= Seq(
 )
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
+
+scalacOptions ++= Seq(
+       "-Ywarn-value-discard",
+      "-feature"
+
+)

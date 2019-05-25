@@ -22,7 +22,7 @@ object FileConsoleApp extends IOApp {
   lazy val pwd: Path = FileSystems.getDefault.getPath(".")
 
   lazy val filesComponent: Store[List[String], UI[IO, State[List[String], ?], Console]] =
-    Store(render _ ,List[String]("hello1"))
+    Store(render _ ,List[String]())
 
   def render(list: List[String]): (IO[State[List[String], Unit]] => IO[Unit]) => Console =
     (send: IO[State[List[String],Unit]] => IO[Unit]) => {
@@ -40,13 +40,13 @@ object FileConsoleApp extends IOApp {
             IO.fromTry(Try(new BufferedReader(new InputStreamReader(fin)).readLine()))
           }
           _ <- IO(println(content))
-        } yield State.modify[List[String]]({println("in modify");input::_})
+        } yield State.modify[List[String]](input::_)
 
     read.handleErrorWith(e => IO(println(e)).flatMap(_=>reset))
   }
 
   val reset: IO[State[List[String], Unit]] =
-    IO(println("resetting")).flatMap{_ => IO(State.modify[List[String]](x=>{println(s"input $x"); "hello"::x}))}
+    IO(println("resetting")).flatMap{_ => IO(State.set[List[String]](List()))}
 
   def inputStream(f: File): Resource[IO, FileInputStream] =
     Resource.make {

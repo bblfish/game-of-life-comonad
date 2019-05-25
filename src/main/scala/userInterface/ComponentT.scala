@@ -33,19 +33,13 @@ object ComponentT {
 
     type WCompT[W[_],M[_]] = W[UI[IO,M,Console]]
     def send(ref: Ref[IO,WCompT[W,M]], space: WCompT[W,M]): CallBk[IO,M] =
-      (baseAction: IO[M[Unit]]) => for {
-        action <- baseAction  // <- this extraction of action is new as compared to Component.explore
-      } yield {
+      (baseAction: IO[M[Unit]]) => baseAction.flatMap{ action =>
         val wcomp: WCompT[W,M] = Pairing.move[W, M, UI[IO, M, Console], Unit](space)(action)
-        println(s"wcomp=$wcomp")
-        val result = ref.set(wcomp)
-        println("done send")
-        result
+        ref.set(wcomp)
       }
     Ref.of[IO, WCompT[W,M]](componentT).flatMap { ref =>
       val step: IO[Unit] = for {
         space <- ref.get
-        nouse = println(s"space=$space")
         f: ((IO[M[Unit]] => IO[Unit]) => Console) = coM.extract(space)
         Console(text, act) = f(send(ref, space))
         _ <- putStrlLn(text)
