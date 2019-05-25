@@ -189,7 +189,7 @@ object LifeStore extends App {
         while (true) {
             current = step(current)
             val rendered = render(current)
-            println("\033\143") // Clear the terminal
+            println("\u001b\u0063") // Clear the terminal
             println(rendered)
             Thread.sleep(300)
         }
