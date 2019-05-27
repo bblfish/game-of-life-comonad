@@ -30,15 +30,15 @@ object RepresentableFunctor extends App {
         override def index[A](f: E => A): E => A = f
     }
 
-    implicit val streamRepresentable: Representable[Stream, Int] = new Representable[Stream, Int] {
-        override implicit def F: Functor[Stream] = Functor[Stream]
+    implicit val streamRepresentable: Representable[LazyList, Int] = new Representable[LazyList, Int] {
+        override implicit def F: Functor[LazyList] = Functor[LazyList]
 
         private val inc: Int => Int = _ + 1
 
-        override def tabulate[A](f: Int => A): Stream[A] =
+        override def tabulate[A](f: Int => A): LazyList[A] =
             f(0) #:: tabulate(inc.andThen(f))
 
-        override def index[A](f: Stream[A]): Int => A = idx => {
+        override def index[A](f: LazyList[A]): Int => A = idx => {
             f.drop(idx).head
         }
     }
@@ -88,7 +88,7 @@ object RepresentableFunctor extends App {
 
     def string(i: Int): String = s" --$i-- "
 
-    val stringNumbers: Stream[String] = Representable[Stream, Int].tabulate(string)
+    val stringNumbers: LazyList[String] = Representable[LazyList, Int].tabulate(string)
 
     //    println(stringNumbers.take(10).toList)
 

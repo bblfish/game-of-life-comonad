@@ -1,7 +1,7 @@
 import cats._
 import cats.implicits._
 
-case class StreamZipper[A](left: Stream[A], focus: A, right: Stream[A]) {
+case class StreamZipper[A](left: LazyList[A], focus: A, right: LazyList[A]) {
 
     def moveLeft: StreamZipper[A] =
         if (left.isEmpty) this
@@ -11,11 +11,11 @@ case class StreamZipper[A](left: Stream[A], focus: A, right: Stream[A]) {
         if (right.isEmpty) this
         else new StreamZipper[A](focus #:: left, right.head, right.tail)
 
-    private lazy val lefts: Stream[StreamZipper[A]] =
-        Stream.iterate(this)(_.moveLeft).tail.zip(left).map(_._1)
+    private lazy val lefts: LazyList[StreamZipper[A]] =
+        LazyList.iterate(this)(_.moveLeft).tail
 
-    private lazy val rights: Stream[StreamZipper[A]] =
-        Stream.iterate(this)(_.moveRight).zip(right).map(_._1)
+    private lazy val rights: LazyList[StreamZipper[A]] =
+        LazyList.iterate(this)(_.moveRight)
 
     def map[B](f: A => B): StreamZipper[B] =
         new StreamZipper[B](left.map(f), f(focus), right.map(f))
@@ -38,10 +38,10 @@ case class StreamZipper[A](left: Stream[A], focus: A, right: Stream[A]) {
 
 object StreamZipper {
     def apply[A](left: List[A], f: A, right: List[A]): StreamZipper[A] =
-        new StreamZipper[A](left.reverse.toStream, f, right.toStream)
+        new StreamZipper[A](LazyList.from(left.reverse), f, LazyList.from(right))
 
     def apply[A](as: List[A]): StreamZipper[A] =
-        new StreamZipper[A](Stream.empty, as.head, as.tail.toStream)
+        new StreamZipper[A](LazyList.empty, as.head, LazyList.from(as.tail))
 
     implicit val StreamZipperComonad: Comonad[StreamZipper] = new Comonad[StreamZipper] {
 
